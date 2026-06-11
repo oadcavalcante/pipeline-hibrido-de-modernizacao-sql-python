@@ -36,6 +36,8 @@ START
  END
 ```
 
+![Grafo sql_modernizer visualizado no LangGraph Studio — 5 nós: parse → analyze → generate → validate → persist, com roteamento condicional para persist em caso de falha](docs/langgraph-studio.png)
+
 ---
 
 ## Execução rápida
