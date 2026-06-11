@@ -1,0 +1,57 @@
+{
+  "id": "e864e2a8-a69a-4612-8f4a-c391d8c496e2",
+  "status": "success",
+  "generated_code": "from __future__ import annotations\n\nfrom decimal import Decimal\nfrom typing import Any\n\nimport asyncpg\n\n\nasync def fn_saldo_cliente(conn: asyncpg.Connection, p_cliente_id: int) -> Decimal:\n    \"\"\"\n    Retorna o saldo total consolidado de todas as contas ativas de um cliente.\n\n    Args:\n        conn: Conexão asyncpg já aberta.\n        p_cliente_id: Identificador do cliente.\n\n    Returns:\n        Saldo total consolidado das contas ativas do cliente.\n    \"\"\"\n    row: asyncpg.Record | None = await conn.fetchrow(\n        \"\"\"\n        SELECT COALESCE(SUM(saldo), 0) AS v_total\n        FROM contas\n        WHERE cliente_id = $1\n          AND status = 'ATIVA'\n        \"\"\",\n        p_cliente_id,\n    )\n\n    if row is None:\n        return Decimal(\"0.00\")\n\n    v_total: Decimal = row[\"v_total\"]\n    return v_total",
+  "report": {
+    "parsing": {
+      "status": "success",
+      "duration_ms": 1.77,
+      "name": "fn_saldo_cliente",
+      "kind": "function",
+      "parameters_count": 1,
+      "variables_count": 1,
+      "cursors_count": 0,
+      "has_exception_block": false,
+      "sql_statements_count": 1
+    },
+    "analysis": {
+      "status": "success",
+      "duration_ms": 0.08,
+      "constructs": [],
+      "complexity": "low",
+      "return_pattern": "scalar",
+      "risks_count": 0,
+      "high_risks": []
+    },
+    "generation": {
+      "status": "success",
+      "duration_ms": 2368.66,
+      "model": "gpt-5.4-mini",
+      "input_tokens": 1303,
+      "output_tokens": 199,
+      "lines_generated": 34
+    },
+    "validation": {
+      "ast_valid": true,
+      "ast_error": null,
+      "ruff_available": false,
+      "ruff_issues": [],
+      "ruff_error_count": 0,
+      "ruff_warning_count": 0,
+      "type_hint_coverage": 1.0,
+      "has_docstrings": true,
+      "function_count": 1,
+      "import_lines": [
+        "from __future__ import annotations",
+        "from decimal import Decimal",
+        "from typing import Any",
+        "import asyncpg"
+      ],
+      "quality_score": 1.0,
+      "passed": true,
+      "duration_ms": 23.03,
+      "status": "success"
+    }
+  },
+  "created_at": "2026-06-11T00:42:32.659315Z"
+}

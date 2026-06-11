@@ -1,0 +1,64 @@
+{
+  "id": "e135ce8c-7c3f-4fca-8b99-0b385250a230",
+  "status": "success",
+  "generated_code": "from __future__ import annotations\n\nfrom dataclasses import dataclass\nfrom datetime import date\nfrom decimal import Decimal\nfrom typing import Any\n\nimport asyncpg\n\n\n@dataclass(slots=True)\nclass ProcessarLoteTaxasResult:\n    \"\"\"Resultado do processamento do lote de taxas.\"\"\"\n\n    total_taxas: Decimal\n    count: int\n\n\nasync def sp_processar_lote_taxas(\n    conn: asyncpg.Connection,\n    p_data_referencia: date,\n) -> None:\n    \"\"\"\n    Processa as transações efetivadas de uma data de referência, calcula a tarifa aplicável,\n    registra a tarifa como nova transação do tipo TARIFA e grava logs em JSONB.\n\n    Args:\n        conn: Conexão asyncpg aberta.\n        p_data_referencia: Data de referência para processamento.\n\n    Returns:\n        None.\n    \"\"\"\n    sql_transacoes = \"\"\"\n        SELECT id, conta_origem_id, tipo, valor\n        FROM transacoes\n        WHERE DATE(data_transacao) = $1\n          AND status = 'EFETIVADA'\n          AND tipo <> 'TARIFA'\n    \"\"\"\n    rows = await conn.fetch(sql_transacoes, p_data_referencia)\n\n    v_total_taxas: Decimal = Decimal(\"0\")\n    v_count: int = 0\n\n    async with conn.transaction():\n        for row in rows:\n            v_id: int = row[\"id\"]\n            v_origem: int | None = row[\"conta_origem_id\"]\n            v_tipo: str = row[\"tipo\"]\n            v_valor: Decimal = row[\"valor\"]\n\n            taxa_row = await conn.fetchrow(\n                \"\"\"\n                SELECT percentual, valor_minimo\n                FROM taxas\n                WHERE tipo_operacao = $1\n                  AND vigente_de <= $2\n                  AND (vigente_ate IS NULL OR vigente_ate >= $2)\n                ORDER BY vigente_de DESC\n                LIMIT 1\n                \"\"\",\n                v_tipo,\n                p_data_referencia,\n            )\n\n            if taxa_row is None or taxa_row[\"percentual\"] is None:\n                continue\n\n            v_percentual: Decimal = taxa_row[\"percentual\"]\n            v_minimo: Decimal = taxa_row[\"valor_minimo\"]\n\n            v_taxa: Decimal = max((v_valor * v_percentual) / Decimal(\"100.0\"), v_minimo)\n\n            if v_tipo == \"TRANSFERENCIA\":\n                v_taxa = v_taxa\n            elif v_tipo == \"SAQUE\":\n                v_taxa = v_taxa * Decimal(\"1.10\")\n            else:\n                v_taxa = v_taxa * Decimal(\"0.90\")\n\n            if v_origem is not None:\n                await conn.execute(\n                    \"\"\"\n                    UPDATE contas\n                    SET saldo = saldo - $1\n                    WHERE id = $2\n                    \"\"\",\n                    v_taxa,\n                    v_origem,\n                )\n\n                await conn.execute(\n                    \"\"\"\n                    INSERT INTO transacoes (conta_origem_id, tipo, valor, status)\n                    VALUES ($1, 'TARIFA', $2, 'EFETIVADA')\n                    \"\"\",\n                    v_origem,\n                    v_taxa,\n                )\n\n                await conn.execute(\n                    \"\"\"\n                    INSERT INTO log_auditoria (entidade, entidade_id, acao, detalhes)\n                    VALUES (\n                        'transacoes',\n                        $1,\n                        'TARIFA_APLICADA',\n                        $2\n                    )\n                    \"\"\",\n                    v_id,\n                    {\n                        \"transacao_origem\": v_id,\n                        \"tipo_origem\": v_tipo,\n                        \"valor_origem\": str(v_valor),\n                        \"percentual\": str(v_percentual),\n                        \"taxa_aplicada\": str(v_taxa),\n                    },\n                )\n\n                v_total_taxas += v_taxa\n                v_count += 1\n\n        await conn.execute(\n            \"\"\"\n            INSERT INTO log_auditoria (entidade, acao, detalhes)\n            VALUES (\n                'lote_taxas',\n                'LOTE_PROCESSADO',\n                $1\n            )\n            \"\"\",\n            {\n                \"data_referencia\": p_data_referencia.isoformat(),\n                \"transacoes\": v_count,\n                \"total_taxas\": str(v_total_taxas),\n            },\n        )",
+  "report": {
+    "parsing": {
+      "status": "success",
+      "duration_ms": 1.47,
+      "name": "sp_processar_lote_taxas",
+      "kind": "procedure",
+      "parameters_count": 1,
+      "variables_count": 9,
+      "cursors_count": 1,
+      "has_exception_block": false,
+      "sql_statements_count": 5
+    },
+    "analysis": {
+      "status": "success",
+      "duration_ms": 0.13,
+      "constructs": [
+        "explicit_cursor",
+        "jsonb_operations"
+      ],
+      "complexity": "high",
+      "return_pattern": "void",
+      "risks_count": 1,
+      "high_risks": [
+        "cursor_n_plus_one"
+      ]
+    },
+    "generation": {
+      "status": "success",
+      "duration_ms": 5327.82,
+      "model": "gpt-5.4-mini",
+      "input_tokens": 2243,
+      "output_tokens": 881,
+      "lines_generated": 139
+    },
+    "validation": {
+      "ast_valid": true,
+      "ast_error": null,
+      "ruff_available": false,
+      "ruff_issues": [],
+      "ruff_error_count": 0,
+      "ruff_warning_count": 0,
+      "type_hint_coverage": 1.0,
+      "has_docstrings": true,
+      "function_count": 1,
+      "import_lines": [
+        "from __future__ import annotations",
+        "from dataclasses import dataclass",
+        "from datetime import date",
+        "from decimal import Decimal",
+        "from typing import Any",
+        "import asyncpg"
+      ],
+      "quality_score": 1.0,
+      "passed": true,
+      "duration_ms": 12.9,
+      "status": "success"
+    }
+  },
+  "created_at": "2026-06-11T00:42:50.648534Z"
+}
