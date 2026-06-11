@@ -52,7 +52,7 @@ docker compose up --build -d     # subir stack (app + postgres + langfuse)
 
 ### Pré-requisitos
 - Docker + Docker Compose
-- Chave de API OpenAI (ou Anthropic)
+- Chave de API OpenAI
 
 ### 1. Configurar variáveis de ambiente
 

@@ -9,7 +9,6 @@ services:
       DATABASE_URL: postgresql+asyncpg://pipeline:pipeline@postgres:5432/pipeline
       DATABASE_URL_SYNC: postgresql+psycopg2://pipeline:pipeline@postgres:5432/pipeline
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       DEFAULT_LLM_MODEL: ${DEFAULT_LLM_MODEL:-gpt-5.4-mini}
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}

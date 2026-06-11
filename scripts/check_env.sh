@@ -44,9 +44,6 @@ echo ""
 check "OPENAI_API_KEY (obrigatório para GPT)" "${OPENAI_API_KEY:-}" "$(
   [[ "${DEFAULT_LLM_MODEL:-gpt-5.4-mini}" == *claude* ]] && echo false || echo true
 )"
-check "ANTHROPIC_API_KEY (obrigatório para Claude)" "${ANTHROPIC_API_KEY:-}" "$(
-  [[ "${DEFAULT_LLM_MODEL:-gpt-5.4-mini}" == *claude* ]] && echo true || echo false
-)"
 check "DEFAULT_LLM_MODEL" "${DEFAULT_LLM_MODEL:-}"
 check "LANGFUSE_PUBLIC_KEY (observabilidade)" "${LANGFUSE_PUBLIC_KEY:-}" false
 check "LANGFUSE_SECRET_KEY (observabilidade)" "${LANGFUSE_SECRET_KEY:-}" false
