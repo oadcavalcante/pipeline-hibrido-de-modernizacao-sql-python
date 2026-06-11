@@ -1,0 +1,30 @@
+# Ambiente virtual e artefatos de build
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+
+# Segredos — NUNCA versionar
+.env
+
+# IDEs e editores
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Cache de ferramentas
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Documentos pessoais / material do processo seletivo
+*.pdf
+
+# Results: gerados em runtime; incluir no repo conforme exigido pelo desafio
+!results/.gitkeep
