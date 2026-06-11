@@ -1,0 +1,86 @@
+services:
+  # ── Aplicação principal ────────────────────────────────────────────────────
+  app:
+    build: .
+    container_name: sql-modernizer-app
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://pipeline:pipeline@postgres:5432/pipeline
+      DATABASE_URL_SYNC: postgresql+psycopg2://pipeline:pipeline@postgres:5432/pipeline
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      DEFAULT_LLM_MODEL: ${DEFAULT_LLM_MODEL:-gpt-5.4-mini}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_HOST: http://langfuse:3000
+      LANGFUSE_ENABLED: ${LANGFUSE_ENABLED:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./langgraph.json:/app/langgraph.json
+      - ./results:/app/results
+    restart: unless-stopped
+
+  # ── PostgreSQL (banco principal) ───────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: sql-modernizer-db
+    environment:
+      POSTGRES_DB: pipeline
+      POSTGRES_USER: pipeline
+      POSTGRES_PASSWORD: pipeline
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/01_modernization_history.sql:/docker-entrypoint-initdb.d/01_init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pipeline -d pipeline"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ── Langfuse (Observabilidade) ────────────────────────────────────
+  langfuse:
+    image: langfuse/langfuse:2
+    container_name: sql-modernizer-langfuse
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://langfuse:langfuse@langfuse-db:5432/langfuse
+      NEXTAUTH_SECRET: super-secret-change-in-production
+      NEXTAUTH_URL: http://localhost:3000
+      SALT: random-salt-change-in-production
+      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "true"
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── PostgreSQL (banco do Langfuse) ─────────────────────────────────────────
+  langfuse-db:
+    image: postgres:16-alpine
+    container_name: sql-modernizer-langfuse-db
+    environment:
+      POSTGRES_DB: langfuse
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse
+    ports:
+      - "5433:5432"
+    volumes:
+      - langfuse_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse -d langfuse"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  langfuse_data:

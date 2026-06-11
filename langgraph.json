@@ -1,0 +1,11 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "sql_modernizer": "./src/pipeline/graph/graph.py:build_graph_for_cli"
+  },
+  "env": ".env",
+  "http": {
+    "app": "./src/pipeline/api/server.py:app",
+    "disable_meta": true
+  }
+}
