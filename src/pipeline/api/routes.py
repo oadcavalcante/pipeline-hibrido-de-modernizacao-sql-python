@@ -6,7 +6,8 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import HTMLResponse
 
 from pipeline.api.schemas import (
     HealthResponse,
@@ -37,6 +38,51 @@ async def get_trace_manager() -> TraceManager:
 
 
 # ─────────────────────────── Endpoints ───────────────────────────────────────
+
+STUDIO_URL = "https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:8000"
+
+
+@router.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def home(request: Request) -> str:
+    """Página inicial com links úteis (use http://127.0.0.1:8000 no browser)."""
+    base = str(request.base_url).rstrip("/")
+    return f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SQL Modernizer</title>
+  <style>
+    body {{ font-family: system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; color: #1a1a1a; }}
+    h1 {{ font-size: 1.5rem; }}
+    p {{ color: #444; }}
+    ul {{ padding-left: 1.25rem; }}
+    a {{ color: #2563eb; }}
+    code {{ background: #f4f4f5; padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.9em; }}
+    .note {{ background: #fef9c3; border-left: 4px solid #eab308; padding: 0.75rem 1rem; margin: 1rem 0; font-size: 0.9rem; }}
+  </style>
+</head>
+<body>
+  <h1>SQL Modernizer</h1>
+  <p>Pipeline híbrido (LLM + regras) para modernizar stored procedures
+     <strong>PL/pgSQL → Python 3.14</strong>, orquestrado com LangGraph.</p>
+  <div class="note">
+    No terminal o LangGraph pode mostrar <code>0.0.0.0:8000</code> (bind do servidor).
+    No browser use <code>127.0.0.1</code> — o LangSmith Studio não aceita <code>0.0.0.0</code>.
+  </div>
+  <h2>Links</h2>
+  <ul>
+    <li><a href="{base}/docs">API Docs (Swagger)</a> — <code>POST /modernize</code></li>
+    <li><a href="{base}/health">Health</a></li>
+    <li><a href="{base}/metrics">Métricas</a></li>
+    <li><a href="{STUDIO_URL}">LangGraph Studio</a> (grafo visual)</li>
+    <li><a href="http://localhost:3000">Langfuse</a> (observabilidade)</li>
+  </ul>
+  <h2>Pipeline</h2>
+  <p><code>parse → analyze → generate → validate → persist</code></p>
+</body>
+</html>"""
+
 
 @router.get("/health", response_model=HealthResponse, tags=["sistema"])
 async def health(

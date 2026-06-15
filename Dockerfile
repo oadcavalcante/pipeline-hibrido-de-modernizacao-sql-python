@@ -25,5 +25,8 @@ ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 
-# Servidor principal via LangGraph CLI (expõe grafo + rotas FastAPI customizadas)
-CMD ["langgraph", "dev", "--host", "0.0.0.0", "--port", "8000", "--no-browser"]
+COPY scripts/docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
+# 0.0.0.0 = bind no container (Docker). Browser/Studio: http://127.0.0.1:8000
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

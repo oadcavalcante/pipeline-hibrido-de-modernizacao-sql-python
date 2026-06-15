@@ -72,9 +72,9 @@ docker compose up --build
 Serviços iniciados:
 | Serviço | URL / Porta |
 |---------|-------------|
-| **LangGraph CLI** (servidor principal) | http://localhost:8000 |
-| Swagger UI (`/docs`) | http://localhost:8000/docs |
-| LangGraph Studio | http://localhost:8000 (grafo `sql_modernizer`) |
+| **LangGraph CLI** (servidor principal) | http://127.0.0.1:8000 (página inicial com links) |
+| Swagger UI (`/docs`) | http://127.0.0.1:8000/docs |
+| LangGraph Studio | https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:8000 |
 | Langfuse (UI) | http://localhost:3000 |
 | PostgreSQL — pipeline | `localhost:5432` (db: `pipeline`, user: `pipeline`) |
 | PostgreSQL — Langfuse | `localhost:5433` (db: `langfuse`, user: `langfuse`) |
