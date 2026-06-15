@@ -1,11 +1,11 @@
 {
-  "id": "6979dbcb-37e1-4874-b668-1e36077667b6",
+  "id": "da6d0691-1f71-4c48-b184-7eb46a1dbc1f",
   "status": "success",
-  "generated_code": "from __future__ import annotations\n\nfrom dataclasses import dataclass\nfrom datetime import datetime, timedelta\nfrom typing import NamedTuple\n\nimport asyncpg\n\n\nclass SpAtualizarStatusContasInativasResult(NamedTuple):\n    \"\"\"Resultado da procedure sp_atualizar_status_contas_inativas.\"\"\"\n\n    p_afetadas: int\n\n\nasync def sp_atualizar_status_contas_inativas(\n    conn: asyncpg.Connection,\n    p_dias: int,\n) -> SpAtualizarStatusContasInativasResult:\n    \"\"\"Marca como INATIVA toda conta sem movimentação há mais de p_dias dias.\n\n    Args:\n        conn: Conexão asyncpg ativa.\n        p_dias: Quantidade de dias de inatividade. Deve ser positivo.\n\n    Returns:\n        NamedTuple com o total de contas afetadas em p_afetadas.\n\n    Raises:\n        ValueError: Se p_dias for nulo ou menor/igual a zero.\n    \"\"\"\n    if p_dias is None or p_dias <= 0:\n        raise ValueError(f\"Parametro p_dias deve ser positivo, recebido: {p_dias}\")\n\n    sql_update = \"\"\"\n        UPDATE contas c\n        SET status = 'INATIVA'\n        WHERE c.status = 'ATIVA'\n          AND NOT EXISTS (\n              SELECT 1\n              FROM transacoes t\n              WHERE (t.conta_origem_id = c.id OR t.conta_destino_id = c.id)\n                AND t.data_transacao >= NOW() - ($1 * INTERVAL '1 day')\n          )\n    \"\"\"\n\n    result = await conn.execute(sql_update, p_dias)\n    p_afetadas = int(result.split()[-1])\n\n    sql_insert_log = \"\"\"\n        INSERT INTO log_auditoria (entidade, acao, detalhes)\n        VALUES (\n            'contas',\n            'INATIVACAO_LOTE',\n            jsonb_build_object('dias', $1, 'afetadas', $2)\n        )\n    \"\"\"\n    await conn.execute(sql_insert_log, p_dias, p_afetadas)\n\n    return SpAtualizarStatusContasInativasResult(p_afetadas=p_afetadas)",
+  "generated_code": "from __future__ import annotations\n\nfrom dataclasses import dataclass\nfrom typing import Any\n\nimport asyncpg\n\n\n@dataclass(frozen=True, slots=True)\nclass SpAtualizarStatusContasInativasResult:\n    \"\"\"Resultado da procedure sp_atualizar_status_contas_inativas.\"\"\"\n\n    p_afetadas: int\n\n\nasync def sp_atualizar_status_contas_inativas(\n    conn: asyncpg.Connection,\n    p_dias: int | None,\n) -> SpAtualizarStatusContasInativasResult:\n    \"\"\"Marca como INATIVA toda conta sem movimentação há mais de p_dias dias.\n\n    Args:\n        conn: Conexão asyncpg já aberta.\n        p_dias: Quantidade de dias de inatividade.\n\n    Returns:\n        SpAtualizarStatusContasInativasResult com o total de contas afetadas.\n\n    Raises:\n        ValueError: Se p_dias for nulo ou não positivo.\n    \"\"\"\n    if p_dias is None or p_dias <= 0:\n        raise ValueError(f\"Parametro p_dias deve ser positivo, recebido: {p_dias}\")\n\n    async with conn.transaction():\n        result = await conn.execute(\n            \"\"\"\n            UPDATE contas c\n            SET status = 'INATIVA'\n            WHERE c.status = 'ATIVA'\n              AND NOT EXISTS (\n                  SELECT 1\n                  FROM transacoes t\n                  WHERE (t.conta_origem_id = c.id OR t.conta_destino_id = c.id)\n                    AND t.data_transacao >= NOW() - ($1 || ' days')::INTERVAL\n              )\n            \"\"\",\n            p_dias,\n        )\n        p_afetadas = int(result.split()[-1])\n\n        await conn.execute(\n            \"\"\"\n            INSERT INTO log_auditoria (entidade, acao, detalhes)\n            VALUES ($1, $2, $3)\n            \"\"\",\n            \"contas\",\n            \"INATIVACAO_LOTE\",\n            {\"dias\": p_dias, \"afetadas\": p_afetadas},\n        )\n\n    return SpAtualizarStatusContasInativasResult(p_afetadas=p_afetadas)",
   "report": {
     "parsing": {
       "status": "success",
-      "duration_ms": 1.2,
+      "duration_ms": 1.03,
       "name": "sp_atualizar_status_contas_inativas",
       "kind": "procedure",
       "parameters_count": 2,
@@ -30,11 +30,11 @@
     },
     "generation": {
       "status": "success",
-      "duration_ms": 3083.38,
+      "duration_ms": 2681.01,
       "model": "gpt-5.4-mini",
       "input_tokens": 1681,
-      "output_tokens": 452,
-      "lines_generated": 60
+      "output_tokens": 446,
+      "lines_generated": 62
     },
     "validation": {
       "ast_valid": true,
@@ -49,15 +49,14 @@
       "import_lines": [
         "from __future__ import annotations",
         "from dataclasses import dataclass",
-        "from datetime import datetime, timedelta",
-        "from typing import NamedTuple",
+        "from typing import Any",
         "import asyncpg"
       ],
       "quality_score": 1.0,
       "passed": true,
-      "duration_ms": 11.63,
+      "duration_ms": 10.79,
       "status": "success"
     }
   },
-  "created_at": "2026-06-11T00:42:35.878540Z"
+  "created_at": "2026-06-15T02:22:51.125507Z"
 }

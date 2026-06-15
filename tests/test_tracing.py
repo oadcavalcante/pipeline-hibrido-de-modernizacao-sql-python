@@ -31,7 +31,15 @@ async def test_trace_node_wrapper_executes(proc_b: str) -> None:
     assert result["parsing_report"]["status"] == "success"
 
 
-def test_trace_manager_noop_without_credentials() -> None:
+def test_trace_manager_noop_without_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
+    """No-op quando Langfuse está desabilitado (independente do .env local)."""
+    import pipeline.observability.tracing as tracing
+
+    tracing._langfuse_instance = None
+    monkeypatch.setattr(tracing.settings, "langfuse_enabled", False)
+    monkeypatch.setattr(tracing.settings, "langfuse_public_key", "")
+    monkeypatch.setattr(tracing.settings, "langfuse_secret_key", "")
+
     tracer = TraceManager()
     span = tracer.span_by_id("fake-id", name="parse", input_data={})
     assert span is None
