@@ -1,8 +1,65 @@
-# SQL Modernizer — Pipeline Híbrido PL/pgSQL → Python 3.14
+<div align="center">
 
-Pipeline híbrido (LLM + regras determinísticas) para modernizar stored procedures
-PL/pgSQL para código Python 3.14 idiomático, orquestrado com **LangGraph** e exposto
-via **LangGraph CLI** (`langgraph dev`), com rotas customizadas FastAPI (`/modernize`, `/health`).
+# 🔄 SQL Modernizer
+
+**Pipeline híbrido que moderniza stored procedures PL/pgSQL em Python 3.14 idiomático — LLM + regras determinísticas, orquestrado com LangGraph.**
+
+<br />
+
+[![Python](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)](src/pipeline)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](src/pipeline/api)
+[![LangGraph](https://img.shields.io/badge/LangGraph-orquestração-1C3C3C?logo=langchain&logoColor=white)](src/pipeline/graph)
+[![LangChain](https://img.shields.io/badge/LangChain-OpenAI-1C3C3C?logo=langchain&logoColor=white)](src/pipeline/graph/nodes/generation.py)
+[![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white)](src/pipeline/api/schemas.py)
+
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](sql/01_modernization_history.sql)
+[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-D71F00?logo=sqlalchemy&logoColor=white)](src/pipeline/db)
+[![asyncpg](https://img.shields.io/badge/asyncpg-driver-336791?logo=postgresql&logoColor=white)](results)
+[![sqlglot](https://img.shields.io/badge/sqlglot-parser-FF6B35)](src/pipeline/graph/nodes/parsing.py)
+
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
+[![Langfuse](https://img.shields.io/badge/Langfuse-observabilidade-000000?logo=langfuse&logoColor=white)](src/pipeline/observability)
+[![pytest](https://img.shields.io/badge/pytest-61%20testes-0A9EDC?logo=pytest&logoColor=white)](tests)
+
+<br />
+
+[Stack completa ↓](#stack-completa) · [Documentação](#execução-local) · [API `/docs`](http://127.0.0.1:8000/docs) · [Métricas](#get-metrics) · [Issues](https://github.com/oadcavalcante/pipeline-hibrido-de-modernizacao-sql-python/issues)
+
+</div>
+
+## Features
+
+- 🔀 **Pipeline em 5 nós** — `parse` → `analyze` → `generate` → `validate` → `persist` (LangGraph)
+- 🧠 **Híbrido LLM + regras** — parsing determinístico, análise de riscos e hints antes do LLM
+- 🐘 **PostgreSQL** — histórico em `modernization_history` + schema legado dos Anexos B–F
+- 📊 **Métricas** — `GET /metrics` com `success_rate`, `ast_valid_rate` e `quality_score`
+- 🔭 **Observabilidade** — traces e spans no Langfuse (self-hosted via Docker)
+- ✅ **Qualidade** — `ast.parse`, ruff, pytest unitário e testes comportamentais (`TEST_BEHAVIORAL=1`)
+
+## Getting Started
+
+| | Comando / link |
+|---|---|
+| **Primeira vez** | `cp .env.example .env` → `docker compose up --build -d` |
+| **Smoke test** | `bash scripts/full_test.sh` |
+| **Modernizar B–F** | `bash scripts/run_all_procedures.sh` |
+| **API (Swagger)** | http://127.0.0.1:8000/docs |
+| **Langfuse** | http://localhost:3000 |
+| **LangGraph Studio** | https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:8000 |
+
+---
+
+## Stack completa
+
+| Camada | Tecnologias |
+|--------|-------------|
+| **Runtime** | Python 3.14, LangGraph, LangChain, FastAPI, Uvicorn |
+| **LLM** | OpenAI (`gpt-5.4-mini` padrão) |
+| **Dados** | PostgreSQL 16, SQLAlchemy 2, asyncpg, Alembic |
+| **Parsing** | sqlglot, regex PL/pgSQL |
+| **Observabilidade** | Langfuse 2 (self-hosted) |
+| **Infra** | Docker Compose |
+| **Qualidade** | pytest, pytest-asyncio, ruff |
 
 ---
 
